@@ -203,6 +203,12 @@ Cel: potwierdzić, że podejście działa, zanim cokolwiek ruszymy w Way.
   - Testy RunWay: 61 × 3 TFM + 37 PG + 37 SQL; demo RunWay 17/17 × 4 przeglądarki w Production.
   - Otwarte w RunWay (sprzed zmian): ostrzeżenia EF o `Skip`/`Take` bez `OrderBy` i o dwóch relacjach `DbRecurrence.Job` / `DbJob.Recurrence`.
   - Uwaga do uruchamiania dem: `dotnet run` bierze port i środowisko z `launchSettings.json` (Development), więc sprawdzanie „w Production” wymaga `--no-launch-profile`.
+- **Drobne po fazie 6 (2026-10-17):**
+  - Shell: propsy Way (`api`, `navigate`) mają stałą tożsamość. Wcześniej `useNavigate()` zmieniał się po każdej zmianie adresu, więc każda nawigacja dawała nowego klienta API, a CultureWay pobierał tłumaczenia od nowa (i mógł zgubić niezapisaną edycję). Test regresji w e2e CultureWay.
+  - Preset: to, co moduł ładuje przez `import()`, trafia do `dist/chunks/[name]-[hash].js` (osadzane i serwowane obok `way.js`, z autoryzacją Way i długim cache); ostrzeżenie, gdy `way.js` ma ponad 100 KB po gzipie (`sizeWarningKb`).
+  - CultureWay: flagi ładowane po jednej (`country-flag-icons/string/3x2`), `way.js` 78 → 24 KB gzip. RunWay: wykres i strony z Data Grid / Lab ładowane leniwie, `way.js` 266 → 7 KB gzip.
+  - RunWay: zadania zawsze posortowane (na końcu po id, stabilne stronicowanie), relacje zadanie ↔ cykl skonfigurowane jawnie zamiast `[ForeignKey]` po obu stronach; model bez zmian wobec migracji, bez ostrzeżeń EF przy starcie.
+  - Wszystkie dema w Production (`--no-launch-profile`) w Chrome, Edge, Firefoxie i WebKicie: Shell 37/37, ConfigWay 14/14, CultureWay 17/17, RunWay 17/17, Showcase 32/32.
 
 ### Faza 7: wydanie
 - Dokumentacja (README Shella, sekcje „Using with other Ways” w README Way, przewodnik migracji opcji).
