@@ -21,6 +21,7 @@ public sealed class ShellAccessTests
     [Theory]
     [InlineData("/config/")]
     [InlineData("/config/_way/way.js")]
+    [InlineData("/config/_way/chunks/details-T3st.js")]
     [InlineData("/config/api/ping")]
     public async Task UndecidedWay_Answers403_OutsideDevelopment(string url)
     {

@@ -1,30 +1,32 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import react from '@vitejs/plugin-react';
-import { build } from 'vite';
+import { build, createLogger } from 'vite';
 import { describe, expect, it } from 'vitest';
 import { CONTRACT, SHARED_LIBRARIES } from '../src/index.js';
-import { wayModule } from '../src/vite/index.js';
+import { wayModule, type WayModuleOptions } from '../src/vite/index.js';
 
 const fixture = (name: string) => join(import.meta.dirname, 'fixtures', name);
 
-async function buildFixture(name: string, nodeEnv = 'production') {
+async function buildFixture(name: string, nodeEnv = 'production', options: WayModuleOptions = {}, warnings: string[] = []) {
   // Vitest runs with NODE_ENV=test, which makes the React plugin emit development JSX; `vite build` runs with production.
   const previous = process.env.NODE_ENV;
   process.env.NODE_ENV = nodeEnv;
   try {
-    return await buildWithPreset(name);
+    return await buildWithPreset(name, options, warnings);
   } finally {
     process.env.NODE_ENV = previous;
   }
 }
 
-function buildWithPreset(name: string) {
+function buildWithPreset(name: string, options: WayModuleOptions, warnings: string[]) {
+  const logger = createLogger('silent');
+  logger.warn = (message) => warnings.push(message);
   return build({
     root: fixture(name),
     configFile: false,
-    logLevel: 'silent',
-    plugins: [react(), wayModule({ entry: 'way.tsx' })],
+    customLogger: logger,
+    plugins: [react(), wayModule({ entry: 'way.tsx', ...options })],
   });
 }
 
@@ -54,6 +56,35 @@ describe('wayModule()', () => {
     await buildFixture('module');
     const code = readFileSync(join(fixture('module'), 'dist', 'way.js'), 'utf8');
     expect(code).toMatch(new RegExp(`contract:\\s*${CONTRACT}\\b`));
+  });
+
+  it('puts what the module loads with import() in content-named chunks next to way.js', async () => {
+    await buildFixture('lazy');
+    const chunks = join(fixture('lazy'), 'dist', 'chunks');
+    const [chunk, ...others] = readdirSync(chunks);
+    expect(others).toEqual([]);
+    expect(chunk).toMatch(/^details-[\w-]+\.js$/);
+    expect(readFileSync(join(fixture('lazy'), 'dist', 'way.js'), 'utf8')).toContain(`./chunks/${chunk}`);
+    expect(importsOf(readFileSync(join(chunks, chunk), 'utf8')).sort()).toEqual(['@mui/material', 'react/jsx-runtime']);
+  });
+
+  it('puts a module that way.js and a lazy chunk share in a chunk of its own, not behind way.js', async () => {
+    // The shell imports way.js with a version in the query; a chunk importing plain way.js would get a second copy.
+    await buildFixture('lazy-imports-entry');
+    const chunks = join(fixture('lazy-imports-entry'), 'dist', 'chunks');
+    const names = readdirSync(chunks);
+    expect(names.some((n) => n.startsWith('label-'))).toBe(true);
+    for (const name of names) expect(readFileSync(join(chunks, name), 'utf8')).not.toMatch(/way\.js/);
+  });
+
+  it('warns when way.js is big, and only then', async () => {
+    const big: string[] = [];
+    await buildFixture('module', 'production', { sizeWarningKb: 1 }, big);
+    expect(big.some((w) => /way\.js is \d+ KB after gzip \(more than 1 KB\).*import\(\)/s.test(w))).toBe(true);
+
+    const small: string[] = [];
+    await buildFixture('module', 'production', {}, small);
+    expect(small.some((w) => w.includes('after gzip'))).toBe(false);
   });
 
   it('refuses to bundle a package that keeps state the shell does not share', async () => {

@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
 import type { Plugin, UserConfig } from 'vite';
 import { CONTRACT } from '../contract.js';
 import { SHARED_LIBRARIES } from '../shared.js';
@@ -9,6 +10,11 @@ export interface WayModuleOptions {
   entry?: string;
   /** Default: `dist`. The Way's `.csproj` embeds this folder. */
   outDir?: string;
+  /**
+   * Warn when `way.js` is bigger than this, in kilobytes after gzip; every page of the Way waits for it. Default: 100.
+   * `false` turns the warning off.
+   */
+  sizeWarningKb?: number | false;
 }
 
 const ENTRY = '\0kododo-way:entry';
@@ -87,12 +93,30 @@ export function wayModule(options: WayModuleOptions = {}): Plugin {
       return building ? loadForBuild(this, id, resolve(root, options.entry ?? 'src/way.tsx')) : null;
     },
 
-    // The same, for whatever reached the output without passing through resolveId as a require.
     generateBundle(_, bundle) {
       if (!building) return;
-      for (const chunk of Object.values(bundle))
-        if (chunk.type === 'chunk' && chunk.code.includes("environment that doesn't expose the `require` function"))
+      for (const chunk of Object.values(bundle)) {
+        if (chunk.type !== 'chunk') continue;
+        // The same, for whatever reached the output without passing through resolveId as a require.
+        if (chunk.code.includes("environment that doesn't expose the `require` function"))
           this.error(requireMessage('a shared library', chunk.fileName));
+        if (chunk.isEntry && options.sizeWarningKb !== false) {
+          const kb = gzipSync(chunk.code).length / 1024;
+          const limit = options.sizeWarningKb ?? 100;
+          if (kb > limit)
+            this.warn(
+              `way.js is ${Math.round(kb)} KB after gzip (more than ${limit} KB), and every page of the Way waits for it. ` +
+                'Load what only some pages need with import() (React.lazy); it becomes a separate file next to way.js.',
+            );
+        }
+        // The shell imports way.js with a version in the query; a chunk importing plain way.js would get a second copy
+        // of the module, with its own state.
+        if (!chunk.isEntry && [...chunk.imports, ...chunk.dynamicImports].includes('way.js'))
+          this.error(
+            `${chunk.fileName}, loaded with import(), imports code of way.js itself. Move what both use into a module ` +
+              'that only the lazily loaded code imports, or import it statically.',
+          );
+      }
     },
   };
 }
@@ -114,7 +138,12 @@ function buildConfig(options: WayModuleOptions): UserConfig {
       outDir: options.outDir ?? 'dist',
       emptyOutDir: true,
       lib: { entry: options.entry ?? 'src/way.tsx', formats: ['es'], fileName: () => 'way.js', cssFileName: 'way' },
-      rollupOptions: { external: (id: string) => shared.has(id) },
+      rollupOptions: {
+        external: (id: string) => shared.has(id),
+        // What the module loads with import(): separate files next to way.js, named by content, so they can be cached
+        // for good (way.js itself gets the assembly's version in the query).
+        output: { chunkFileNames: 'chunks/[name]-[hash].js' },
+      },
     },
   };
 }

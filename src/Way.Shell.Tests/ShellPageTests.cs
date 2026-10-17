@@ -184,6 +184,18 @@ public sealed class ShellPageTests
     }
 
     [Fact]
+    public async Task LazyChunksOfTheModule_AreServedNextToIt()
+    {
+        await using var app = await StartWithWay();
+
+        var chunk = await app.GetAsync("/config/_way/chunks/details-T3st.js");
+
+        Assert.Equal(HttpStatusCode.OK, chunk.StatusCode);
+        Assert.Equal("text/javascript", chunk.Content.Headers.ContentType?.MediaType);
+        Assert.Equal("public, max-age=31536000, immutable", chunk.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
     public async Task SharedAssets_AreServedOnce_WithoutAuthorization()
     {
         await using var app = await ShellApp.StartAsync(

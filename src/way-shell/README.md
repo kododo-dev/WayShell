@@ -80,6 +80,8 @@ export default defineConfig({
 
 Icons (`@mui/icons-material`) and other stateless libraries are bundled into the module, so only the icons it uses are included.
 
+What the module loads with `import()` (`React.lazy`, a chart library, a flag per language) goes to content-named files in `dist/chunks/`, embedded and served next to `way.js`, and is fetched only when needed. The preset warns when `way.js` itself is over 100 KB after gzip, since every page of the Way waits for it; `wayModule({ sizeWarningKb: 200 })` moves the limit and `false` turns the warning off.
+
 ## Working on it locally
 
 `npm run dev` with an `index.html` rendering the module inside `WayDevHost`: the same shell as in the app, with Vite's hot reload, and the API through Vite's proxy to the running backend.
