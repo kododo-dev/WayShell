@@ -58,7 +58,7 @@ function WayList({ settings, onNavigate }: { settings: ShellSettings; onNavigate
   const current = useLocation().pathname.split('/')[1];
   return (
     <List component="nav" dense sx={{ py: 1, flexShrink: 0 }}>
-      {settings.ways.map((w) => {
+      {settings.ways.filter((w) => !w.hidden).map((w) => {
         const Icon = iconFor(w.icon);
         const active = w.id === current;
         return (

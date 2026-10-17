@@ -66,6 +66,7 @@ internal static class ShellPage
         return new ShellSettings(
             Title: options.Title ?? defaultTitle,
             HomeUrl: Resolve(options.HomeUrl),
+            Notice: options.Notice,
             Language: options.Language,
             Links: [.. options.Links.Concat(options.DynamicLinks.SelectMany(links => links(context))).Select(l => l with { Url = Resolve(l.Url)! })],
             User: user is null ? null : user with { AccountUrl = Resolve(user.AccountUrl), SignOutUrl = Resolve(user.SignOutUrl) },
@@ -75,6 +76,7 @@ internal static class ShellPage
                 Id: w.Module.Id,
                 Name: w.Module.Name,
                 Icon: w.Module.Icon,
+                Hidden: w.Module.IsHidden,
                 Url: $"{pathBase}{w.Path}/",
                 ApiBase: $"{pathBase}{w.Path}/api",
                 ModuleUrl: $"{pathBase}{w.Path}/{ShellEndpoints.ModulePath}/way.js?v={w.Version}",
@@ -120,6 +122,7 @@ internal static class ShellPage
 internal sealed record ShellSettings(
     string Title,
     string? HomeUrl,
+    string? Notice,
     string? Language,
     ShellLink[] Links,
     ShellUser? User,
@@ -131,6 +134,7 @@ internal sealed record WayInfo(
     string Id,
     string Name,
     string? Icon,
+    bool Hidden,
     string Url,
     string ApiBase,
     string ModuleUrl,

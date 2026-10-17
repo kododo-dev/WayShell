@@ -40,6 +40,12 @@ const menuOf = (page) => page.locator('nav .MuiListItemText-primary').allTextCon
   record('page header of the module', await visible(page.getByRole('heading', { name: 'Demo: hello' })));
   record('user at the bottom of the menu', await visible(page.getByTestId('shell-user').filter({ hasText: 'bob' })));
   record('host links in the menu', await visible(page.getByRole('link', { name: 'GitHub' })));
+  record('notice above the Way', await visible(page.getByTestId('shell-notice').filter({ hasText: 'A public demo' })));
+  await page.getByTestId('shell-user').getByRole('link', { name: 'bob' }).click();
+  record('hidden Way opens from the user link', (await apiOk(page, 'account')) && page.url().endsWith('#/account/'), page.url());
+  record('hidden Way is not in the menu', (await menuOf(page)).join(',') === 'Hello,Reports', (await menuOf(page)).join(','));
+  await page.goto(`${base}/admin/#/hello/`);
+  await apiOk(page, 'hello');
 
   const wayMenu = page.getByTestId('demo-menu');
   record("Way's own items in the side menu", await visible(wayMenu.getByText('Overview')));

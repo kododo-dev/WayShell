@@ -11,10 +11,11 @@ builder.Services.AddWayShell(o =>
 {
     o.Title = "Way.Shell demo";
     o.HomeUrl = "~/";
+    o.Notice = "A public demo: sign in as anyone from the home page.";
     o.Links.Add(new ShellLink("Home", "~/") { Icon = "home" });
     o.Links.Add(new ShellLink("GitHub", "https://github.com/kododo-dev/WayShell"));
     o.User = context => context.User.Identity is { IsAuthenticated: true, Name: { } name }
-        ? new ShellUser(name) { SignOutUrl = "~/logout" }
+        ? new ShellUser(name) { AccountUrl = "~/admin/#/account/", SignOutUrl = "~/logout" }
         : null;
 });
 
@@ -58,6 +59,8 @@ app.MapMethods("/logout", ["GET", "POST"], async (HttpContext c) =>
 
 app.UseDemoWay("hello", "Hello", "/hello", "dashboard").AllowAnonymous();
 app.UseDemoWay("reports", "Reports", "/reports", "logs").RequireAuthorization("Admin");
+// Not in the panel's menu: the user's name links to it.
+app.UseDemoWay("account", "Account", "/account", "people", hidden: true).RequireAuthorization();
 app.UseWayShell("/admin").RequireAuthorization();
 
 app.Run();
@@ -65,9 +68,9 @@ app.Run();
 /// <summary>What a Way library's Use…Way() does: mount the shell with its module and map its API on the group.</summary>
 internal static class DemoWay
 {
-    public static RouteGroupBuilder UseDemoWay(this IEndpointRouteBuilder endpoints, string id, string name, string path, string icon)
+    public static RouteGroupBuilder UseDemoWay(this IEndpointRouteBuilder endpoints, string id, string name, string path, string icon, bool hidden = false)
     {
-        var group = endpoints.MapWay(new WayModule(id, name, typeof(DemoWay).Assembly, "UI/dist") { Icon = icon }, path);
+        var group = endpoints.MapWay(new WayModule(id, name, typeof(DemoWay).Assembly, "UI/dist") { Icon = icon, IsHidden = hidden }, path);
         // As Reiho maps requests: POST {path}/api/{Request}.
         group.MapPost("/api/Hello", (HttpContext c) => new { way = id, user = c.User.Identity?.Name, time = DateTimeOffset.Now.ToString("T") });
         group.MapPost("/api/Expire", () => Results.Unauthorized());

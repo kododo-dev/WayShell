@@ -48,6 +48,12 @@ public sealed partial record WayModule
     /// </summary>
     public bool IsSensitive { get; init; }
 
+    /// <summary>
+    /// The panel does not list the Way in its menu; it still opens at <c>#/{id}/</c>, e.g. from a link in the host's
+    /// options (<c>~/#/account/</c> as <see cref="ShellUser.AccountUrl"/>) or from another Way.
+    /// </summary>
+    public bool IsHidden { get; init; }
+
     [GeneratedRegex("^[a-z][a-z0-9-]*$")]
     private static partial Regex IdPattern();
 }
