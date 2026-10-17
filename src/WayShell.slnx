@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Demo/">
+    <Project Path="Way.Shell.Demo/Way.Shell.Demo.csproj" />
+  </Folder>
+  <Project Path="Way.Shell/Way.Shell.csproj" />
+  <Folder Name="/Tests/">
+    <Project Path="Way.Shell.Tests/Way.Shell.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Kododo.Way.Shell (NuGet) ──────────────────────────────────────────────
+  dotnet:
+    name: .NET build & tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # The shell embeds its UI (shared libraries + shell app); the demo embeds a module built with the npm package.
+      - name: Build the UIs
+        run: |
+          (cd src/way-shell && npm ci && npm run build)
+          (cd src/Way.Shell/UI && npm ci && npm run lint && npm run build)
+          (cd src/Way.Shell.Demo/UI && npm ci && npm run build)
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.x
+            9.x
+            10.x
+
+      - name: Restore
+        run: dotnet restore src/WayShell.slnx
+
+      - name: Build
+        run: dotnet build src/WayShell.slnx --no-restore --configuration Release
+
+      - name: Test
+        run: >
+          dotnet test src/WayShell.slnx
+          --no-build --configuration Release
+          --logger "trx;LogFilePrefix=dotnet-results"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dotnet-test-results
+          path: "**/*.trx"
+
+  # ── @kododo-dev/way-shell (npm) ───────────────────────────────────────────
+  npm:
+    name: npm lint, tests & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/way-shell
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: src/way-shell/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+      - name: Check the package contents
+        run: npm pack --dry-run

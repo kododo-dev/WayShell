@@ -1,0 +1,92 @@
+name: Publish
+
+# A tag v1.2.3 publishes Kododo.Way.Shell to NuGet and @kododo-dev/way-shell to npm with the same version: the
+# module contract is shared, so the two are always released together.
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # npm Trusted Publishing (OIDC) and provenance; no npm token in the repository secrets.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          # A pre-release must not become npm's "latest".
+          if [[ "$VERSION" == *-* ]]; then echo "NPM_TAG=next" >> $GITHUB_OUTPUT; else echo "NPM_TAG=latest" >> $GITHUB_OUTPUT; fi
+
+      # ── npm ────────────────────────────────────────────────────────────
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: src/way-shell/package-lock.json
+
+      # Trusted Publishing needs npm 11.5.1 or newer.
+      - name: Update npm
+        run: npm install --global npm@^11.5.1
+
+      - name: Test and build the npm package
+        working-directory: src/way-shell
+        run: |
+          npm ci
+          npm run lint
+          npm test
+          npm run build
+          npm version "${{ steps.version.outputs.VERSION }}" --no-git-tag-version
+
+      - name: Build the shell's UI
+        working-directory: src/Way.Shell/UI
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build the demo's module
+        working-directory: src/Way.Shell.Demo/UI
+        run: |
+          npm ci
+          npm run build
+
+      # ── NuGet ──────────────────────────────────────────────────────────
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.x
+            9.x
+            10.x
+
+      - name: Test
+        run: dotnet test src/WayShell.slnx --configuration Release
+
+      - name: Pack
+        run: >
+          dotnet pack src/Way.Shell/Way.Shell.csproj
+          --configuration Release
+          -p:Version=${{ steps.version.outputs.VERSION }}
+          --output ./nupkgs
+
+      # Both packages are tested and built before either is pushed.
+      - name: Publish to npm
+        working-directory: src/way-shell
+        run: npm publish --provenance --access public --tag ${{ steps.version.outputs.NPM_TAG }}
+
+      - name: Push to NuGet
+        run: >
+          dotnet nuget push "./nupkgs/*.nupkg"
+          --api-key ${{ secrets.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate

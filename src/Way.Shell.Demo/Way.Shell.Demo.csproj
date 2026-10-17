@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <!-- UI/dist is the demo Way's module, built by `npm run build` in UI with the wayModule() preset. -->
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+    <DefaultItemExcludes>$(DefaultItemExcludes);UI\node_modules\**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="UI\dist\**\*" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
+    <ProjectReference Include="..\Way.Shell\Way.Shell.csproj" />
+  </ItemGroup>
+
+  <Target Name="_PreserveFileProvidersEmbeddedPackageReference" AfterTargets="AddPrunePackageReferences">
+    <ItemGroup>
+      <PrunePackageReference Remove="Microsoft.Extensions.FileProviders.Embedded" />
+    </ItemGroup>
+  </Target>
+
+</Project>

@@ -1,0 +1,89 @@
+{
+  "name": "@kododo-dev/way-shell",
+  "version": "0.0.0",
+  "description": "Module contract, runtime (hooks, API client, shell UI, WayDevHost) and Vite preset for Kododo Way UI modules running inside Way.Shell.",
+  "license": "MIT",
+  "author": {
+    "name": "Kododo",
+    "email": "jacek@kododo.dev"
+  },
+  "homepage": "https://github.com/kododo-dev/WayShell#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kododo-dev/WayShell.git",
+    "directory": "src/way-shell"
+  },
+  "bugs": "https://github.com/kododo-dev/WayShell/issues",
+  "keywords": [
+    "kododo",
+    "way",
+    "aspnetcore",
+    "micro-frontend",
+    "import-maps",
+    "vite"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite/index.d.ts",
+      "default": "./dist/vite/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^9.0.0",
+    "@mui/material": "^9.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.0.0",
+    "vite": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@eslint/js": "^9.39.5",
+    "@mui/icons-material": "^9.0.0",
+    "@mui/material": "^9.0.0",
+    "@types/node": "^24.12.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^16.5.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router-dom": "^7.14.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.71.2",
+    "use-sync-external-store": "^1.7.0",
+    "vite": "^8.0.4",
+    "vitest": "^4.1.12"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!-- The test host follows the runtime the tests run on. -->
+  <PropertyGroup>
+    <AspNetCoreTestVersion>10.0.13</AspNetCoreTestVersion>
+    <AspNetCoreTestVersion Condition="'$(TargetFramework)' == 'net8.0'">8.0.31</AspNetCoreTestVersion>
+    <AspNetCoreTestVersion Condition="'$(TargetFramework)' == 'net9.0'">9.0.20</AspNetCoreTestVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Kododo.Reiho.AspNetCore" Version="2.1.1" />
+    <!-- 10.x on every target: the .NET 10 SDK prunes older versions, which drops the task writing the manifest. -->
+    <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Testing -->
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="$(AspNetCoreTestVersion)" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+  </ItemGroup>
+</Project>

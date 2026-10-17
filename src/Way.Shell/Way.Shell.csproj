@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Kododo.Reiho.AspNetCore" />
+        <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
+    </ItemGroup>
+
+    <!-- The shell's UI: UI/page is the page template, UI/dist the shared libraries and the shell app (npm run build in UI). -->
+    <PropertyGroup>
+        <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+        <DefaultItemExcludes>$(DefaultItemExcludes);UI\node_modules\**;UI\vendor\**</DefaultItemExcludes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="UI\page\**\*" />
+        <EmbeddedResource Include="UI\dist\**\*" />
+    </ItemGroup>
+
+    <!-- The .NET 10 SDK prunes Embedded 8.x/9.x with the shared framework, which drops the task writing the manifest. -->
+    <Target Name="_PreserveFileProvidersEmbeddedPackageReference" AfterTargets="AddPrunePackageReferences">
+        <ItemGroup>
+            <PrunePackageReference Remove="Microsoft.Extensions.FileProviders.Embedded" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="_RequireShellUi" BeforeTargets="Build">
+        <Error Condition="!Exists('$(MSBuildProjectDirectory)/UI/dist/shell.json')"
+               Text="UI/dist/shell.json is missing. Run 'npm ci &amp;&amp; npm run build' in src/Way.Shell/UI first." />
+    </Target>
+
+    <ItemGroup>
+        <None Include=".nuget\logo.png" Pack="true" PackagePath="\" />
+        <None Include=".nuget\README.md" Pack="true" PackagePath="" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+            <_Parameter1>Kododo.Way.Shell.Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <Description>Shared UI shell for Kododo Way libraries (ConfigWay, CultureWay, RunWay, LogWay): one layout, theme, language and React for every Way in an app, and an optional panel with all of them.</Description>
+        <PackageTags>kododo;way;aspnetcore;admin;micro-frontend</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/kododo-dev/WayShell</RepositoryUrl>
+        <PackageIcon>logo.png</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <Version>1.0.0-local</Version>
+        <!-- Symbol packages (.snupkg) are pushed together with the .nupkg. -->
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
+</Project>
