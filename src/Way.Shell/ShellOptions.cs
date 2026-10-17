@@ -17,6 +17,11 @@ public sealed class ShellOptions
     /// <summary>Language of the UI, e.g. <c>en</c> or <c>pl</c>. Default: the browser's.</summary>
     public string? Language { get; set; }
 
+    /// <summary>
+    /// A note shown above every Way, e.g. that the app is a public demo whose data is reset. No note when not set.
+    /// </summary>
+    public string? Notice { get; set; }
+
     /// <summary>Links of the host, at the bottom of the shell's menu.</summary>
     public IList<ShellLink> Links { get; } = [];
 

@@ -2,6 +2,7 @@ using Kododo.Reiho.AspNetCore.SPA;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -59,18 +60,26 @@ public static class ShellEndpoints
         /// <summary>
         /// Mounts the panel at <paramref name="path"/>: one page with every Way mounted in the app that the current
         /// user may open, as decided by the authorization on each Way. Protect the panel itself on the returned group,
-        /// e.g. <c>app.UseWayShell("/admin").RequireAuthorization("Admin")</c>.
+        /// e.g. <c>app.UseWayShell("/admin").RequireAuthorization("Admin")</c>. At <c>/</c> the panel is the app's home
+        /// page and answers only there; every other address stays the host's.
         /// </summary>
         public RouteGroupBuilder UseWayShell(string path = "/admin")
         {
             var registry = Registry(endpoints);
             MapAssets(endpoints, registry);
 
-            var panelPath = Normalize(path);
-            var group = endpoints.MapGroup(panelPath).WithMetadata(new ShellPanelMetadata());
+            var panelPath = Normalize(path, allowRoot: true);
+            var group = endpoints.MapGroup(panelPath.Length == 0 ? "/" : panelPath).WithMetadata(new ShellPanelMetadata());
             ShellAccess.Protect(group, "The Way.Shell panel");
             group.MapEmbeddedSpa(typeof(ShellEndpoints).Assembly, o =>
                 ShellPage.Configure(o, panelPath, context => VisibleWays(context, registry, current: null), _ => "Admin", "panel", wayId: null));
+            if (panelPath.Length == 0)
+                // The page is all the panel serves (its files come from AssetsPath): at the root, Reiho's catch-all would
+                // answer every address the host does not map, with the panel's 404 or its sign-in instead of the host's.
+                ((IEndpointConventionBuilder)group).Add(endpoint =>
+                {
+                    if (endpoint is RouteEndpointBuilder route) route.RoutePattern = RoutePatternFactory.Parse("/");
+                });
             return group;
         }
     }
@@ -102,11 +111,13 @@ public static class ShellEndpoints
             .MapEmbeddedSpa(typeof(ShellEndpoints).Assembly, o => o.RootPath = ShellPage.AssetsRootPath);
     }
 
-    internal static string Normalize(string path)
+    /// <summary><c>/segments</c> without a trailing slash; the root is <c>""</c> where <paramref name="allowRoot"/>.</summary>
+    internal static string Normalize(string path, bool allowRoot = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         var trimmed = "/" + path.Trim().Trim('/');
-        return trimmed == "/" ? throw new ArgumentException("A Way cannot be mounted at the root of the app.", nameof(path)) : trimmed;
+        if (trimmed != "/") return trimmed;
+        return allowRoot ? "" : throw new ArgumentException("A Way cannot be mounted at the root of the app.", nameof(path));
     }
 }
 

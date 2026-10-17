@@ -210,6 +210,12 @@ Cel: potwierdzić, że podejście działa, zanim cokolwiek ruszymy w Way.
   - RunWay: zadania zawsze posortowane (na końcu po id, stabilne stronicowanie), relacje zadanie ↔ cykl skonfigurowane jawnie zamiast `[ForeignKey]` po obu stronach; model bez zmian wobec migracji, bez ostrzeżeń EF przy starcie.
   - Wszystkie dema w Production (`--no-launch-profile`) w Chrome, Edge, Firefoxie i WebKicie: Shell 37/37, ConfigWay 14/14, CultureWay 17/17, RunWay 17/17, Showcase 32/32.
 
+- **2.1.0 (2026-10-17, gałąź `feat/shell-2.1`), dla Polyglota jako jednej aplikacji w panelu:**
+  - `ShellOptions.Notice`: notka nad każdym Way (panel i strona Way), np. „publiczne demo”.
+  - `WayModule.IsHidden`: Way bez pozycji w menu panelu, otwierany pod `#/{id}/` (np. konto z linku pod nazwą użytkownika); panel przekierowuje na pierwszy widoczny Way.
+  - `UseWayShell("/")`: panel w korzeniu aplikacji. Konwencja na grupie zawęża trasę catch-all Reiho do samego `/` (pliki panelu i tak idą z `AssetsPath`); bez tego każdy nieznany adres dostawał 404 panelu albo przekierowanie na logowanie (klient API z kluczem: 302 zamiast 404). Inne endpointy hosta odpowiadają jak dotąd. `MapWay` w korzeniu dalej zabronione.
+  - Kontrakt modułu bez zmian (2). Testy: 53 × 3 TFM, npm 31; demo Shella (notka, ukryty Way „Account”) 40/40 × 4 przeglądarki.
+
 ### Faza 7: wydanie
 - Dokumentacja (README Shella, sekcje „Using with other Ways” w README Way, przewodnik migracji opcji).
 - Reiho 2.1.0 przed Shellem. Potem jednym rzutem 2.0.0: Way.Shell → ConfigWay → CultureWay → RunWay → LogWay; następnie hosty (Polyglot, Logle) na nowych paczkach.

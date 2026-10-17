@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +54,8 @@ public sealed class ShellPageTests
         Assert.Equal("config", settings.GetProperty("wayId").GetString());
         Assert.Equal("Config", settings.GetProperty("title").GetString());
         Assert.Equal("config", way.GetProperty("id").GetString());
+        Assert.False(way.GetProperty("hidden").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, settings.GetProperty("notice").ValueKind);
         Assert.Equal("/config/", way.GetProperty("url").GetString());
         Assert.Equal("/config/api", way.GetProperty("apiBase").GetString());
         Assert.Matches("^/config/_way/way.js\\?v=[0-9a-f]{12}$", way.GetProperty("moduleUrl").GetString());
@@ -66,6 +69,7 @@ public sealed class ShellPageTests
         {
             o.Title = "My <app>";
             o.HomeUrl = "/";
+            o.Notice = "A public demo";
             o.Language = "pl";
             o.Links.Add(new ShellLink("Docs", "/docs") { Icon = "home" });
             o.User = _ => new ShellUser("Ada") { AccountUrl = "/account", SignOutUrl = "/logout" };
@@ -78,6 +82,7 @@ public sealed class ShellPageTests
         Assert.Contains("""<html lang="pl">""", html);
         Assert.Equal("My <app>", settings.GetProperty("title").GetString());
         Assert.Equal("/", settings.GetProperty("homeUrl").GetString());
+        Assert.Equal("A public demo", settings.GetProperty("notice").GetString());
         Assert.Equal("Docs", settings.GetProperty("links")[0].GetProperty("title").GetString());
         Assert.Equal("home", settings.GetProperty("links")[0].GetProperty("icon").GetString());
         Assert.Equal("/account", settings.GetProperty("user").GetProperty("accountUrl").GetString());
@@ -244,6 +249,51 @@ public sealed class ShellPageTests
 
         Assert.Equal(HttpStatusCode.NotFound, (await app.GetAsync("/config/nothing.js")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await app.GetAsync("/config/_way/nothing.js")).StatusCode);
+    }
+
+    [Fact]
+    public async Task HiddenWay_IsMarked_ForThePanelsMenu()
+    {
+        await using var app = await ShellApp.StartAsync(app =>
+        {
+            app.MapWay(ShellApp.Module("config", "Config"), "/config").AllowAnonymous();
+            app.MapWay(ShellApp.Module("account", "Account") with { IsHidden = true }, "/account").AllowAnonymous();
+            app.UseWayShell("/admin").AllowAnonymous();
+        });
+
+        var ways = ShellApp.SettingsOf(await (await app.GetAsync("/admin/")).Content.ReadAsStringAsync()).GetProperty("ways");
+
+        Assert.False(ways[0].GetProperty("hidden").GetBoolean());
+        Assert.True(ways[1].GetProperty("hidden").GetBoolean());
+    }
+
+    [Theory]
+    [InlineData(null, "/")]
+    [InlineData("/app", "/app/")]
+    public async Task Panel_AtTheRoot_IsTheHomePage_NextToTheHostsEndpoints(string? pathBase, string baseHref)
+    {
+        await using var app = await ShellApp.StartAsync(app =>
+        {
+            app.MapGet("/login", () => "sign in");
+            app.MapWay(ShellApp.Module("config", "Config"), "/config").AllowAnonymous();
+            app.UseWayShell("/").RequireAuthorization();
+        }, pathBase: pathBase);
+        var prefix = pathBase ?? "";
+
+        var response = await app.GetAsync($"{prefix}/", user: "ada");
+        var html = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains($"""<base href="{baseHref}">""", html);
+        Assert.Equal("panel", ShellApp.SettingsOf(html).GetProperty("mode").GetString());
+        Assert.Equal($"{prefix}/config/api", ShellApp.SettingsOf(html).GetProperty("ways")[0].GetProperty("apiBase").GetString());
+        Assert.Equal("sign in", await (await app.GetAsync($"{prefix}/login")).Content.ReadAsStringAsync());
+        Assert.Equal("single", ShellApp.SettingsOf(await (await app.GetAsync($"{prefix}/config/")).Content.ReadAsStringAsync()).GetProperty("mode").GetString());
+        // Only the page: addresses the host does not map stay 404, not the panel's sign-in.
+        Assert.Equal(HttpStatusCode.Unauthorized, (await app.GetAsync($"{prefix}/")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await app.GetAsync($"{prefix}/nothing")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await app.GetAsync($"{prefix}/index.html", user: "ada")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await app.Client.PostAsync($"{prefix}/nothing", null)).StatusCode);
     }
 
     [Fact]

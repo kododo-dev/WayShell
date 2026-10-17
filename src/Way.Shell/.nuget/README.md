@@ -26,6 +26,8 @@ app.UseCultureWay("/translations").RequireAuthorization();
 app.UseWayShell("/admin").RequireAuthorization();   // lists the Ways the user may open
 ```
 
+The panel can also be the app's home page, `app.UseWayShell("/")`: it answers only at `/` itself, so every other address stays the app's. `ShellOptions.Notice` shows a note above every Way (for example on a public demo), and a Way with `IsHidden = true` opens in the panel without an item in its menu, e.g. an account page the user's name links to (`AccountUrl = "~/#/account/"`).
+
 Outside the Development environment a Way or the panel answers `403` until you decide on its authorization: `RequireAuthorization(...)`, `AllowAnonymous()`, a fallback policy, or `ShellOptions.AllowAnonymous` for public demos. Undecided ones are reported in the log at startup.
 
 ## In a Way library

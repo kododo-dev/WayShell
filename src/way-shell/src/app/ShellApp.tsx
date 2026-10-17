@@ -102,6 +102,7 @@ export function ShellApp({ settings }: { settings: ShellSettings }) {
   );
   const paper = { width: DRAWER_WIDTH, boxSizing: 'border-box' as const, bgcolor: 'background.paper' };
   const panel = settings.mode === 'panel';
+  const home = settings.ways.find((w) => !w.hidden) ?? settings.ways[0];
 
   return (
     <ThemeProvider theme={theme}>
@@ -132,6 +133,11 @@ export function ShellApp({ settings }: { settings: ShellSettings }) {
                     </Toolbar>
                   </AppBar>
                 )}
+                {settings.notice && (
+                  <Alert severity="info" variant="outlined" role="note" sx={{ m: 2, mb: 0, flexShrink: 0 }} data-testid="shell-notice">
+                    {settings.notice}
+                  </Alert>
+                )}
                 <Routes>
                   {panel ? (
                     <>
@@ -139,8 +145,8 @@ export function ShellApp({ settings }: { settings: ShellSettings }) {
                       <Route
                         path="*"
                         element={
-                          settings.ways.length ? (
-                            <Navigate to={`/${settings.ways[0].id}/`} replace />
+                          home ? (
+                            <Navigate to={`/${home.id}/`} replace />
                           ) : (
                             <Alert severity="info" sx={{ m: 3 }}>{shellText(language, 'nothingToOpen')}</Alert>
                           )

@@ -6,6 +6,8 @@ export interface WayInfo {
   name: string;
   /** Name of a Material icon for the panel's menu, e.g. `Settings`. */
   icon: string | null;
+  /** Not listed in the panel's menu, still opened at `#/{id}/`. */
+  hidden?: boolean;
   /** The Way's own page (single mode), with the app's path base. */
   url: string;
   apiBase: string;
@@ -27,6 +29,8 @@ export interface ShellLink {
 export interface ShellSettings {
   title: string;
   homeUrl: string | null;
+  /** A note above every Way, e.g. that the app is a public demo. */
+  notice?: string | null;
   language: string | null;
   links: ShellLink[];
   user: ShellUser | null;
