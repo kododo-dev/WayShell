@@ -1,4 +1,6 @@
-import { Component, Suspense, createElement, use, useContext, useMemo, type ComponentType, type ReactNode } from 'react';
+import {
+  Component, Suspense, createElement, use, useContext, useLayoutEffect, useMemo, useRef, type ComponentType, type ReactNode,
+} from 'react';
 import { Alert, Box, Button, CircularProgress, ThemeProvider } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { createApi } from '../api.js';
@@ -82,13 +84,20 @@ class WayBoundary extends Component<{ name: string; language: string; children: 
 }
 
 export function WayHost({ way, settings, themeMode }: { way: WayInfo; settings: ShellSettings; themeMode: ThemeMode }) {
+  // useNavigate() gives a new function after every change of the address. The Way's props must not follow it: a new
+  // api client on every navigation makes a module load its data again, losing what the user has not saved.
   const routerNavigate = useNavigate();
+  const navigateRef = useRef(routerNavigate);
+  useLayoutEffect(() => {
+    navigateRef.current = routerNavigate;
+  }, [routerNavigate]);
+  const api = useMemo(() => createApi(way.apiBase), [way.apiBase]);
   const { language, setLanguage } = useContext(I18nContext);
   const props = useMemo<WayProps>(
     () => ({
       wayId: way.id,
       apiBase: way.apiBase,
-      api: createApi(way.apiBase),
+      api,
       user: settings.user,
       language,
       themeMode,
@@ -97,7 +106,7 @@ export function WayHost({ way, settings, themeMode }: { way: WayInfo; settings: 
       navigate: (wayId, path = '', options) => {
         const to = wayTarget(settings, way.id, wayId, path);
         if (!to) return;
-        if ('route' in to) routerNavigate(to.route, options);
+        if ('route' in to) navigateRef.current(to.route, options);
         else if (options?.replace) window.location.replace(to.url);
         else window.location.assign(to.url);
       },
@@ -107,7 +116,7 @@ export function WayHost({ way, settings, themeMode }: { way: WayInfo; settings: 
         return 'route' in to ? `${window.location.pathname}${window.location.search}#${to.route}` : to.url;
       },
     }),
-    [way, settings, language, themeMode, routerNavigate],
+    [way, settings, language, themeMode, api],
   );
 
   return (
