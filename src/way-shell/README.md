@@ -2,7 +2,7 @@
 
 Module contract, runtime and Vite preset for the UI of [Kododo](https://github.com/kododo-dev) Way libraries running inside **Way.Shell** ([Kododo.Way.Shell](https://www.nuget.org/packages/Kododo.Way.Shell) on NuGet).
 
-> **Status:** in development, not released yet. The contract is version 2, the major version of the Way family it ships with; it may still change before 2.0.0.
+> The contract is version 2, the major version of the Way family it ships with: a module built with 2.x runs in any Way.Shell 2.x.
 
 A Way's UI is a React module that the shell loads into one page with one copy of React, MUI, emotion and React Router, shared through an import map. The shell provides the layout (side menu with the Ways, the host's links and the user), the theme, the language and the API client. This package is what the module is written and built against.
 

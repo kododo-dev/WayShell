@@ -1,8 +1,6 @@
 # Kododo.Way.Shell
 
-Shared UI shell for the Kododo Way libraries (ConfigWay, CultureWay, RunWay, LogWay).
-
-> **Status:** in development, not released yet. Way libraries move to the shell with the 2.0 release of the family.
+Shared UI shell for the Kododo Way libraries (ConfigWay, CultureWay, RunWay), from version 2.0 of each.
 
 - **One Way in an app:** the Way looks and works as before (`app.UseConfigWay("/config")`), but its layout, theme, language and session handling come from the shell.
 - **Several Ways in an app:** an optional panel (for example `/admin`) with navigation between all of them, one theme and one signed-in user.
