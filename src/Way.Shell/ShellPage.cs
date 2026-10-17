@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using Kododo.Reiho.AspNetCore.SPA;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -26,13 +27,31 @@ internal static class ShellPage
     {
         _ = Manifest.Value; // fail at startup, not on the first request, when the UI was not built
         spa.RootPath = RootPath;
-        // Not Reiho's __BASE_PATH__: that one adds the PathBase setting to Request.PathBase, which doubles the prefix
-        // when the app also calls UsePathBase with it. Every URL of the shell comes from Request.PathBase.
-        spa.Placeholder("__WAY_SHELL_BASE__", context => HtmlEncoder.Default.Encode($"{context.Request.PathBase.Value}{groupPath}/"));
+        // Every URL of the shell starts with AppBase: the page's own placeholder rather than Reiho's __BASE_PATH__, which is
+        // relative to the page's path.
+        spa.Placeholder("__WAY_SHELL_BASE__", context => HtmlEncoder.Default.Encode($"{AppBase(context)}{groupPath}/"));
         spa.Placeholder("__WAY_SHELL_LANG__", context => HtmlEncoder.Default.Encode(Options(context).Language ?? "en"));
         spa.Placeholder("__WAY_SHELL_TITLE__", context => HtmlEncoder.Default.Encode(Options(context).Title ?? defaultTitle(context)));
         spa.Placeholder("__WAY_SHELL_HEAD__", async context =>
             Head(context, Settings(context, await ways(context), defaultTitle(context), mode, wayId)));
+    }
+
+    /// <summary>
+    /// Where the app is in the browser's address: <c>Request.PathBase</c>, after the <c>PathBase</c> setting for a prefix a
+    /// reverse proxy stripped before the request reached the app (<c>ASPNETCORE_PATHBASE</c> without <c>UsePathBase</c>).
+    /// When the app applied the setting itself with <c>UsePathBase</c>, it is already in <c>Request.PathBase</c> and is
+    /// not added again; Reiho's SPA does the same.
+    /// </summary>
+    internal static string AppBase(HttpContext context)
+    {
+        var requestBase = context.Request.PathBase.Value ?? "";
+        var configured = context.RequestServices.GetService<IConfiguration>()?["PathBase"];
+        if (string.IsNullOrWhiteSpace(configured)) return requestBase;
+        var prefix = "/" + configured.Trim().Trim('/');
+        if (prefix == "/") return requestBase;
+        var applied = requestBase.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
+                      (requestBase.Length == prefix.Length || requestBase[prefix.Length] == '/');
+        return applied ? requestBase : prefix + requestBase;
     }
 
     private static ShellOptions Options(HttpContext context) =>
@@ -41,7 +60,7 @@ internal static class ShellPage
     private static ShellSettings Settings(HttpContext context, IReadOnlyList<RegisteredWay> ways, string defaultTitle, string mode, string? wayId)
     {
         var options = Options(context);
-        var pathBase = context.Request.PathBase.Value ?? "";
+        var pathBase = AppBase(context);
         string? Resolve(string? url) => url is not null && url.StartsWith("~/", StringComparison.Ordinal) ? pathBase + url[1..] : url;
         var user = options.User(context);
         return new ShellSettings(
@@ -67,7 +86,7 @@ internal static class ShellPage
     private static string Head(HttpContext context, ShellSettings settings)
     {
         var options = Options(context);
-        var assets = $"{context.Request.PathBase.Value}{ShellEndpoints.Normalize(options.AssetsPath)}/";
+        var assets = $"{AppBase(context)}{ShellEndpoints.Normalize(options.AssetsPath)}/";
         var nonce = options.Nonce(context) is { Length: > 0 } value ? $" nonce=\"{HtmlEncoder.Default.Encode(value)}\"" : "";
         var manifest = Manifest.Value;
 

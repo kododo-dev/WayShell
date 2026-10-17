@@ -39,11 +39,14 @@ internal sealed partial class ShellApp : IAsyncDisposable
         Action<ShellOptions>? shell = null,
         Action<IServiceCollection>? services = null,
         string? pathBase = null,
-        bool pathBaseInConfiguration = false)
+        bool pathBaseInConfiguration = false,
+        string? strippedPathBase = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         // As ASPNETCORE_PATHBASE puts it there, for apps that pass it on to UsePathBase.
         if (pathBaseInConfiguration) builder.Configuration["PathBase"] = pathBase;
+        // A reverse proxy removed this prefix; only the setting tells the app about it (no UsePathBase).
+        if (strippedPathBase is not null) builder.Configuration["PathBase"] = strippedPathBase;
         builder.WebHost.UseTestServer();
         var logs = new ConcurrentQueue<string>();
         builder.Logging.ClearProviders().AddProvider(new QueueLoggerProvider(logs));

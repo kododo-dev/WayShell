@@ -8,9 +8,10 @@ namespace Kododo.Way.Shell.Tests;
 
 public sealed class ShellPageTests
 {
-    private static Task<ShellApp> StartWithWay(Action<ShellOptions>? shell = null, string? pathBase = null, bool pathBaseInConfiguration = false) =>
+    private static Task<ShellApp> StartWithWay(
+        Action<ShellOptions>? shell = null, string? pathBase = null, bool pathBaseInConfiguration = false, string? strippedPathBase = null) =>
         ShellApp.StartAsync(app => app.MapWay(ShellApp.Module("config", "Config"), "/config").AllowAnonymous(),
-            shell: shell, pathBase: pathBase, pathBaseInConfiguration: pathBaseInConfiguration);
+            shell: shell, pathBase: pathBase, pathBaseInConfiguration: pathBaseInConfiguration, strippedPathBase: strippedPathBase);
 
     [Fact]
     public async Task WayPage_PutsTheShellTogether()
@@ -128,6 +129,23 @@ public sealed class ShellPageTests
         var html = await (await app.GetAsync("/p/config/")).Content.ReadAsStringAsync();
 
         Assert.Contains("""<base href="/p/config/">""", html);
+    }
+
+    [Fact]
+    public async Task PathBase_StrippedByAProxy_ComesFromConfiguration()
+    {
+        // As behind a reverse proxy that serves the app at /demo and removes the prefix, with ASPNETCORE_PATHBASE=/demo.
+        await using var app = await StartWithWay(o => o.Links.Add(new ShellLink("Home", "~/")), strippedPathBase: "/demo/");
+
+        var html = await (await app.GetAsync("/config/")).Content.ReadAsStringAsync();
+        var settings = ShellApp.SettingsOf(html);
+        var way = settings.GetProperty("ways")[0];
+
+        Assert.Contains("""<base href="/demo/config/">""", html);
+        Assert.StartsWith("/demo/_way-shell/assets/", ShellApp.ImportMapOf(html).GetProperty("react").GetString());
+        Assert.StartsWith("/demo/config/_way/way.js", way.GetProperty("moduleUrl").GetString());
+        Assert.Equal("/demo/config/api", way.GetProperty("apiBase").GetString());
+        Assert.Equal("/demo/", settings.GetProperty("links")[0].GetProperty("url").GetString());
     }
 
     [Fact]
