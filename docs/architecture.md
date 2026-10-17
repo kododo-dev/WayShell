@@ -214,6 +214,7 @@ Cel: potwierdzić, że podejście działa, zanim cokolwiek ruszymy w Way.
   - `ShellOptions.Notice`: notka nad każdym Way (panel i strona Way), np. „publiczne demo”.
   - `WayModule.IsHidden`: Way bez pozycji w menu panelu, otwierany pod `#/{id}/` (np. konto z linku pod nazwą użytkownika); panel przekierowuje na pierwszy widoczny Way.
   - `UseWayShell("/")`: panel w korzeniu aplikacji. Konwencja na grupie zawęża trasę catch-all Reiho do samego `/` (pliki panelu i tak idą z `AssetsPath`); bez tego każdy nieznany adres dostawał 404 panelu albo przekierowanie na logowanie (klient API z kluczem: 302 zamiast 404). Inne endpointy hosta odpowiadają jak dotąd. `MapWay` w korzeniu dalej zabronione.
+  - 2.1.1: pod PathBase adres aplikacji bez końcowego ukośnika (`/app`) ma pustą ścieżkę, z której Reiho nie umiał wyciąć `/` trasy panelu w korzeniu (500 u zalogowanego na demie Polyglota). Konwencja ustawia wtedy `Path = "/"`; test z adresem bez ukośnika.
   - Kontrakt modułu bez zmian (2). Testy: 53 × 3 TFM, npm 31; demo Shella (notka, ukryty Way „Account”) 40/40 × 4 przeglądarki.
 
 ### Faza 7: wydanie

@@ -78,7 +78,15 @@ public static class ShellEndpoints
                 // answer every address the host does not map, with the panel's 404 or its sign-in instead of the host's.
                 ((IEndpointConventionBuilder)group).Add(endpoint =>
                 {
-                    if (endpoint is RouteEndpointBuilder route) route.RoutePattern = RoutePatternFactory.Parse("/");
+                    if (endpoint is not RouteEndpointBuilder { RequestDelegate: { } inner } route) return;
+                    route.RoutePattern = RoutePatternFactory.Parse("/");
+                    // Under a path base the app's own address without the trailing slash (/app) has an empty path, which
+                    // Reiho cannot cut the route's "/" from.
+                    route.RequestDelegate = context =>
+                    {
+                        if (!context.Request.Path.HasValue) context.Request.Path = "/";
+                        return inner(context);
+                    };
                 });
             return group;
         }

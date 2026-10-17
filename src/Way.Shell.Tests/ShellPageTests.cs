@@ -289,6 +289,13 @@ public sealed class ShellPageTests
         Assert.Equal($"{prefix}/config/api", ShellApp.SettingsOf(html).GetProperty("ways")[0].GetProperty("apiBase").GetString());
         Assert.Equal("sign in", await (await app.GetAsync($"{prefix}/login")).Content.ReadAsStringAsync());
         Assert.Equal("single", ShellApp.SettingsOf(await (await app.GetAsync($"{prefix}/config/")).Content.ReadAsStringAsync()).GetProperty("mode").GetString());
+        if (pathBase is not null)
+        {
+            // The app's own address without the trailing slash: under the path base the request path is empty.
+            var bare = await app.GetAsync(pathBase, user: "ada");
+            Assert.Equal(HttpStatusCode.OK, bare.StatusCode);
+            Assert.Contains($"""<base href="{baseHref}">""", await bare.Content.ReadAsStringAsync());
+        }
         // Only the page: addresses the host does not map stay 404, not the panel's sign-in.
         Assert.Equal(HttpStatusCode.Unauthorized, (await app.GetAsync($"{prefix}/")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await app.GetAsync($"{prefix}/nothing")).StatusCode);
