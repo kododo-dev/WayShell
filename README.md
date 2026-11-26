@@ -12,7 +12,7 @@ Each Way embeds a web UI in an ASP.NET Core app. Before 2.0 every Way shipped it
 
 | Package | What it is |
 |---|---|
-| [`Kododo.Way.Shell`](src/Way.Shell) (NuGet, net8/9/10) | The shell: Way registry, shell page and API, shared libraries, the optional panel. Referenced by every Way library. |
+| [`Kododo.Way.Shell`](src/Way.Shell) (NuGet, net10/11) | The shell: Way registry, shell page and API, shared libraries, the optional panel. Referenced by every Way library. |
 | [`@kododo-dev/way-shell`](src/way-shell) (npm) | Module contract, runtime hooks and the `wayModule()` Vite preset for building a Way's UI. |
 
 Both are versioned and released together from this repository; the major version is the version of the module contract.

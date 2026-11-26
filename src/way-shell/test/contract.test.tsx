@@ -21,8 +21,8 @@ function ShowsWay() {
 }
 
 describe('contract', () => {
-  it('is the major version of Way.Shell, 2', () => {
-    expect(CONTRACT).toBe(2);
+  it('is the major version of Way.Shell, 3', () => {
+    expect(CONTRACT).toBe(3);
   });
 
   it('defineWay returns the options unchanged, the preset adds the contract', () => {

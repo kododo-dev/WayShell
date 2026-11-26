@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      # npm Trusted Publishing (OIDC) and provenance; no npm token in the repository secrets.
+      # Trusted Publishing (OIDC) on npm and nuget.org, npm provenance; no npm or NuGet key in the repository secrets.
       id-token: write
 
     steps:
@@ -65,9 +65,8 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
-            8.x
-            9.x
             10.x
+            11.x
 
       - name: Test
         run: dotnet test src/WayShell.slnx --configuration Release
@@ -84,9 +83,16 @@ jobs:
         working-directory: src/way-shell
         run: npm publish --provenance --access public --tag ${{ steps.version.outputs.NPM_TAG }}
 
+      # Policy on nuget.org: owner kododo-dev, this repository, workflow publish.yml.
+      - name: NuGet login (Trusted Publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
       - name: Push to NuGet
         run: >
           dotnet nuget push "./nupkgs/*.nupkg"
-          --api-key ${{ secrets.NUGET_API_KEY }}
+          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
