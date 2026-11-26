@@ -25,7 +25,7 @@ Poza zakresem v1: Way z innych aplikacji (iframe, SSO), agregacja MCP, własne m
 
 | Paczka | Zawartość |
 |---|---|
-| `Kododo.Way.Shell` (NuGet, net8/9/10) | Rejestr Way, `UseWayShell`, API powłoki, ochrona, osadzone: SPA powłoki, paczka bibliotek wspólnych (vendor), runtime `@kododo-dev/way-shell`, import map |
+| `Kododo.Way.Shell` (NuGet, net10/11) | Rejestr Way, `UseWayShell`, API powłoki, ochrona, osadzone: SPA powłoki, paczka bibliotek wspólnych (vendor), runtime `@kododo-dev/way-shell`, import map |
 | `@kododo-dev/way-shell` (npm) | Typy kontraktu modułu, hooki i komponenty (`useShell`, `useI18n`, `PageHeader`, ...), klient API, preset Vite `wayModule()`, `WayDevHost` do pracy lokalnej |
 
 Wersje NuGet i npm są zawsze takie same i budowane z jednego repo. Wersja główna = wersja kontraktu.
@@ -45,7 +45,7 @@ Wszystkie Way są w React, więc w v1 moduł eksportuje komponent, a nie framewo
 // way.js, budowany presetem wayModule()
 import { defineWay } from '@kododo-dev/way-shell';
 export default defineWay({
-  contract: 2,
+  contract: 3,
   App,            // React.ComponentType<WayProps>, renderowany wewnątrz routera powłoki
   translations,   // opcjonalnie: słowniki Way per język
   theme,          // opcjonalnie: nadpisania motywu (np. gęsty, monospace w LogWay)
@@ -97,7 +97,7 @@ Cel: potwierdzić, że podejście działa, zanim cokolwiek ruszymy w Way.
 
 ### Faza 1: szkielet repo i paczek
 - Repo `WayShell`: `src/Way.Shell` (NuGet), `src/Way.Shell.Tests`, `src/way-shell` (npm), `src/Way.Shell.Demo`.
-- Konwencje rodziny: Directory.Build.props, net8/9/10, Reiho 2, CI (build, testy, ESLint, Vitest), README po angielsku, ten dokument po polsku.
+- Konwencje rodziny: Directory.Build.props, net10/11, Reiho 2, CI (build, testy, ESLint, Vitest), README po angielsku, ten dokument po polsku.
 - Typy kontraktu v1, `defineWay`, preset `wayModule()`.
 - **Publikacja npm** (organizacja `kododo-dev` na npmjs założona 2026-10-16, plan Free, właściciel `jacalapa`):
   - Docelowo **Trusted Publishing** z GitHub Actions (OIDC) z provenance, bez długowiecznego tokenu w sekretach.
@@ -106,7 +106,7 @@ Cel: potwierdzić, że podejście działa, zanim cokolwiek ruszymy w Way.
   - E-mail konta npm trafia do metadanych każdej paczki (publicznie). Przed pierwszą publikacją zdecydować, czy zostaje adres służbowy, czy adres projektu.
   - Po stronie konta (robi użytkownik): 2FA na koncie, wymuszenie 2FA w organizacji, podpięcie GitHuba do odzyskiwania, opcjonalnie drugi właściciel organizacji.
 - **Stan 2026-10-16:** szkielet gotowy lokalnie (bez gita i publikacji).
-  - `src/Way.Shell`: `WayShellContract.Version`, deskryptor `WayModule` z walidacją id. 14 testów na net8/9/10, w tym zgodność numeru kontraktu z paczką npm.
+  - `src/Way.Shell`: `WayShellContract.Version`, deskryptor `WayModule` z walidacją id. 14 testów na net10/11, w tym zgodność numeru kontraktu z paczką npm.
   - `src/way-shell`: kontrakt (`CONTRACT`, `defineWay`, `WayProps`, `useShell`, `ShellContext`), lista bibliotek wspólnych i preset `wayModule()` z ustaleniami z prototypu: przepisywanie `@mui/material/*` i `react-router`, wstrzykiwanie kontraktu przy budowaniu, błąd przy próbie dołączenia drugiej kopii biblioteki wspólnej (np. przez `@mui/system`) albo przy JSX deweloperskim. 9 testów Vitest, w tym budowanie modułów testowych. ESLint, `tsc`, `npm pack` czyste.
   - `.github/workflows`: `ci.yml` (.NET + npm), `publish.yml` (jeden tag publikuje NuGet i npm; npm przez Trusted Publishing z provenance, wersje przedpremierowe pod tagiem `next`).
   - Odłożone do fazy 2, bo bez backendu Shella byłyby puste: `Way.Shell.Demo` i zależność od Reiho 2.
@@ -124,7 +124,7 @@ Cel: potwierdzić, że podejście działa, zanim cokolwiek ruszymy w Way.
   - `AddWayShell`, `MapWay(module, path)` dla bibliotek Way, `UseWayShell(path)`, `ShellOptions` (`Title`, `HomeUrl`, `Language`, `Links`, `User`, `AllowAnonymous`, `AssetsPath`, `Nonce` dla CSP).
   - UI powłoki w `src/Way.Shell/UI`: biblioteki wspólne, runtime ze źródeł `way-shell` (Vite `dedupe`, żeby nie było dwóch Reactów) i minimalna aplikacja powłoki (pełny layout w fazie 3).
   - Demo `src/Way.Shell.Demo` z modułem zbudowanym presetem `wayModule()` (dwa Way z jednego modułu, panel, logowanie „na niby”) i scenariuszami Playwright w `e2e/check.mjs`: 18/18 w Chrome, Edge, Firefoxie i WebKicie, także z `ASPNETCORE_PATHBASE`.
-  - 44 testy .NET na net8/9/10: strona i import map, ustawienia, PathBase (także z `PathBase` w konfiguracji), nonce, pliki modułu i bibliotek, 403 poza Development dla strony, plików modułu i API, `FallbackPolicy`, ostrzeżenie przy starcie, lista Way w panelu wg uprawnień.
+  - 44 testy .NET na net10/11: strona i import map, ustawienia, PathBase (także z `PathBase` w konfiguracji), nonce, pliki modułu i bibliotek, 403 poza Development dla strony, plików modułu i API, `FallbackPolicy`, ostrzeżenie przy starcie, lista Way w panelu wg uprawnień.
 - **Zmiany wobec planu (2026-10-16):**
   - Ustawienia trafiają do strony jako JSON (`<script type="application/json">`), zamiast osobnego API `GetShellSettings`: o jedno żądanie mniej, a i tak są liczone przy każdym wejściu.
   - Wspólne pliki pod `/_way-shell` (anonimowo, raz na aplikację, ścieżka w `ShellOptions.AssetsPath`); moduł Way pod `{ścieżka Way}/_way/`, więc obejmuje go autoryzacja Way.
@@ -146,7 +146,7 @@ Cel: potwierdzić, że podejście działa, zanim cokolwiek ruszymy w Way.
   - Język i motyw pamiętane w `localStorage` (`way-shell:language`, `way-shell:theme`), wspólne dla wszystkich Way na tej samej domenie.
   - Backend: `ShellUser.AccountUrl`, `ShellLink.Icon`, adresy `~/...` w opcjach dostają `PathBase`. Reiho 2.1.1 (poprawka podwójnego prefiksu) wydane i użyte.
   - Preset `wayModule()` w `vite dev` deduplikuje biblioteki wspólne (paczka podpięta przez `file:` albo w monorepo dawała drugi React).
-  - Testy: 22 w Vitest, 45 .NET na net8/9/10, scenariusze demo 31/31 w Chrome, Edge, Firefoxie i WebKicie (też z `ASPNETCORE_PATHBASE`), w tym język, motyw, wygasła sesja, wylogowanie i widok telefonu; `WayDevHost` sprawdzony ręcznie przez Playwright.
+  - Testy: 22 w Vitest, 45 .NET na net10/11, scenariusze demo 31/31 w Chrome, Edge, Firefoxie i WebKicie (też z `ASPNETCORE_PATHBASE`), w tym język, motyw, wygasła sesja, wylogowanie i widok telefonu; `WayDevHost` sprawdzony ręcznie przez Playwright.
   - Biblioteki wspólne z całą powłoką: 304 KB gzip.
 
 ### Faza 4: pilotaż na ConfigWay

@@ -6,7 +6,7 @@ import type { WayApi } from './api.js';
  * Version of the contract between the shell and Way modules. It is the major version of Way.Shell: the shell
  * refuses a module built for another one. Kododo.Way.Shell (NuGet) carries the same number.
  */
-export const CONTRACT = 2;
+export const CONTRACT = 3;
 
 /** The signed-in user as the host describes it. */
 export interface ShellUser {
